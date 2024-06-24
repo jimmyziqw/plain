@@ -1,6 +1,9 @@
-from PyQt6.QtWidgets import QLabel, QPushButton, QGridLayout, QSizePolicy, QScrollArea, QFrame
+import os
+import shutil
+from PyQt6.QtWidgets import QLabel, QGridLayout, QSizePolicy, QScrollArea, QFrame, QFileDialog
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtCore import Qt, QTimer, pyqtSlot
+from PyQt6.QtCore import Qt, QTimer, pyqtSlot, QMimeData, QDir
+
 class ImageGridWidget(QFrame):
     def __init__(self, image_paths, image_size=100, spacing=5):
         super().__init__()
@@ -10,8 +13,12 @@ class ImageGridWidget(QFrame):
         self.image_paths = image_paths
         self.image_size = image_size
         self.spacing = spacing
+        self.root_path = os.path.join(os.path.dirname(__file__), '..', '..', 'resources', 'images')
         self.init_ui()
         self.setup_timers()
+        
+        # Enable drag and drop
+        self.setAcceptDrops(True)
 
     def init_ui(self):
         # Ensure size policy allows for ignoring size constraints
@@ -67,4 +74,36 @@ class ImageGridWidget(QFrame):
     def set_image_size(self, size):
         self.image_size = size
         self.populate_images()
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            super().dragEnterEvent(event)
+
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                local_path = url.toLocalFile()
+                if os.path.isdir(local_path):
+                    self.copy_directory(local_path)
+                else:
+                    self.copy_file(local_path)
+            self.refresh_image_paths()
+            self.populate_images()
+            event.acceptProposedAction()
+        else:
+            super().dropEvent(event)
+
+    def copy_file(self, file_path):
+        if file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+            shutil.copy(file_path, self.root_path)
+
+    def copy_directory(self, dir_path):
+        for root, _, files in os.walk(dir_path):
+            for file in files:
+                self.copy_file(os.path.join(root, file))
+
+    def refresh_image_paths(self):
+        self.image_paths = [os.path.join(self.root_path, file) for file in os.listdir(self.root_path) if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif'))]
 

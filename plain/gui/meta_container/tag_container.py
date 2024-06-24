@@ -9,7 +9,6 @@ class Tags(QFrame):
 
     def init_ui(self):
         layout = QVBoxLayout(self)       
-        # tags_label = QLabel("Tags")
         self.flow_layout = FlowLayout()
         self.add_tag_input = QLineEdit()
         self.add_tag_input.setPlaceholderText("Add new tag")

@@ -1,16 +1,17 @@
-from src.database import connect
-import sqlite3
-conn = sqlite3.connect("tutorial.db")
-cursor = conn.cursor()
-# cursor.execute("CREATE TABLE movie(title, year, score)")
+from PyQt6.QtWidgets import QApplication
+from database.db_handler import DatabaseHandler
+from models.image_model import ImageTableModel
+from controllers.image_controller import ImageController
+from views.main_window import MainWindow
+import sys
 
-res = cursor.execute("SELECT name FROM sqlite_master")
-res.fetchone()
-data = [
-    ("Monty Python at the hoooy" ,1982, 7.9),
-    ("The meaning of Life", 1983, 7.5),
-    ("Life of Brian", 1979, 8.0),
-]
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
 
-cursor.executemany("INSERT INTO movie VALUES(?,?,?)", data)
-conn.commit()
+    db_handler = DatabaseHandler('images.db')
+    model = ImageTableModel(db_handler)
+    controller = ImageController(model)
+    main_window = MainWindow(controller)
+    main_window.show()
+
+    sys.exit(app.exec())
