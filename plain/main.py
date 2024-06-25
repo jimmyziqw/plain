@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QApplication
-from database.db_handler import DatabaseHandler
+from database.image_db import ImageDatabase
 from models.image_model import ImageTableModel
 from controllers.image_controller import ImageController
 from views.main_window import MainWindow
@@ -8,10 +8,10 @@ import sys
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
-    db_handler = DatabaseHandler('images.db')
+    db_handler = ImageDatabase('images.db')
     model = ImageTableModel(db_handler)
-    controller = ImageController(model)
-    main_window = MainWindow(controller)
-    main_window.show()
+    view = MainWindow()
+    controller = ImageController(model, view)
+    view.show()
 
     sys.exit(app.exec())
