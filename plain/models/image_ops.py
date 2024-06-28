@@ -14,7 +14,7 @@ def get_image_metadata(image_path):
     image = Image.open(image_path)
     file_format = image.format
     width, height = image.size
-    
+    file_path = os.path.basename(file_path) # TODO: implement folder
     metadata = {
         'file_name': file_name,
         'file_path': file_path,

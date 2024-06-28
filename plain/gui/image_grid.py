@@ -3,13 +3,20 @@ import shutil
 from PyQt6.QtWidgets import QLabel, QGridLayout, QSizePolicy, QFrame, QFileDialog
 from PyQt6.QtGui import QPixmap, QMouseEvent
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+import glob
+
+def find_images(directory):
+        """Find all image files in the given directory."""
+        image_extensions = ('*.png', '*.jpg', '*.jpeg', '*.gif', '*.bmp')
+        image_paths = []
+        for ext in image_extensions:
+            image_paths.extend(glob.glob(os.path.join(directory, ext)))
+        return image_paths
 
 class ClickableLabel(QLabel):
     clicked = pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent)
-
     def mousePressEvent(self, event: QMouseEvent):
         self.clicked.emit()
         super().mousePressEvent(event)
@@ -18,16 +25,15 @@ class ImageGridWidget(QFrame):
     add_image_signal = pyqtSignal(str)  # Define the signal
     read_file_metadata_signal = pyqtSignal(str) # TODO: swap to id
 
-    def __init__(self, image_paths, image_size=100, spacing=5):
+    def __init__(self, repository_path, image_size=100, spacing=5):
         super().__init__()
         self.setFrameShape(QFrame.Shape.NoFrame)
         self.layout = QGridLayout()
         self.setLayout(self.layout)
-        self.repo_path = "D:\AFUNFOLDER\plain\plain-desktop\\resources\images"
-        self.image_paths = image_paths
+        self.repository_path = repository_path
+        self.image_paths = find_images(self.repository_path)
         self.image_size = image_size
         self.spacing = spacing
-        # self.root_path = os.path.join(os.path.dirname(__file__), '..', '..', 'resources', 'images')
         self.selected_image_path = None  # Track the selected image path
         self.init_ui()
         self.setup_timers()
@@ -36,12 +42,10 @@ class ImageGridWidget(QFrame):
         self.setAcceptDrops(True)
 
     def init_ui(self):
-        # Ensure size policy allows for ignoring size constraints
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.populate_images()
 
     def setup_timers(self):
-        # Throttle timer for resize event
         self.resize_timer = QTimer()
         self.resize_timer.setSingleShot(True)
         self.resize_timer.timeout.connect(self.populate_images)
@@ -85,7 +89,6 @@ class ImageGridWidget(QFrame):
         label.setPixmap(cropped_pixmap.scaled(self.image_size, self.image_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         label.setFixedSize(self.image_size, self.image_size)
 
-        # Highlight selected image with a cyan border
         if image_path == self.selected_image_path:
             label.setStyleSheet('border: 2px solid cyan;')
         else:
@@ -118,7 +121,7 @@ class ImageGridWidget(QFrame):
                 else:
                     self.copy_file(import_path)
                     local_path = os.path.basename(import_path)
-                    self._emit_add_image(os.path.join(self.repo_path, local_path)) 
+                    self._emit_add_image(os.path.join(self.repository_path, local_path)) 
             self.refresh_image_paths()
             self.populate_images()
             event.acceptProposedAction()
@@ -127,12 +130,11 @@ class ImageGridWidget(QFrame):
 
     def _emit_add_image(self, local_path):
         print(f'image dropped {local_path}')
-        #image_data = b'\x89PNG\r\n\x1a\n...'  # Example binary data
         self.add_image_signal.emit(local_path)
 
     def copy_file(self, file_path):
         if file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-            shutil.copy(file_path, self.repo_path)
+            shutil.copy(file_path, self.repository_path)
 
     def copy_directory(self, dir_path):
         for root, _, files in os.walk(dir_path):
@@ -140,4 +142,4 @@ class ImageGridWidget(QFrame):
                 self.copy_file(os.path.join(root, file))
 
     def refresh_image_paths(self):
-        self.image_paths = [os.path.join(self.repo_path, file) for file in os.listdir(self.repo_path) if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif'))]
+        self.image_paths = [os.path.join(self.repository_path, file) for file in os.listdir(self.repository_path) if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif'))]

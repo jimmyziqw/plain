@@ -1,5 +1,4 @@
 import sqlite3
-from PIL import Image
 
 class ImageDatabase:
     def __init__(self, db_path='images.db'):
@@ -16,12 +15,25 @@ class ImageDatabase:
         ''', (file_info['file_path'], file_info['file_name'], file_info['file_format'], file_info['timestamp_created'], file_info['timestamp_modified'],file_info['file_size'], file_info['width'], file_info['height']))
         self.conn.commit()
 
-    def add_tag(self, tag_name):
+    def add_tag(self, image_id, tag_name):
         self.cursor.execute('''
         INSERT INTO tags (name)
         VALUES (?)
         ON CONFLICT(name) DO NOTHING;
         ''', (tag_name,))
+        self.conn.commit()
+
+        self.cursor.execute('''
+        SELECT id FROM tags WHERE name = ?
+        ''', (tag_name,))
+        tag_id = self.cursor.fetchone()[0]
+
+        # Insert the image-tag relationship
+        self.cursor.execute('''
+        INSERT INTO image_tags (image_id, tag_id)
+        VALUES (?, ?)
+        ON CONFLICT(image_id, tag_id) DO NOTHING;
+        ''', (image_id, tag_id))
         self.conn.commit()
 
     def add_image_tag(self, file_name, tag_name):
@@ -35,7 +47,7 @@ class ImageDatabase:
 
     def read_image_metadata(self, file_path):
         self.cursor.execute('''
-            SELECT * FROM images WHERE file_path = ?
+            SELECT * FROM images WHERE file_name = ?
         ''', (file_path,))
         image_data = self.cursor.fetchone()
         if image_data:
@@ -70,7 +82,7 @@ class ImageDatabase:
             print(f"An error occurred: {e}")
             return None
 
-    def find_tags_by_image(self, image_id):
+    def find_tags_by_image_id(self, image_id):
         self.cursor.execute('''
         SELECT tags.name
         FROM tags
@@ -78,7 +90,7 @@ class ImageDatabase:
         WHERE image_tags.image_id = ?
         ''', (image_id,))
         results = self.cursor.fetchall()
-        return results
+        return [tag[0] for tag in results]
    
     def get_all_images(self):
         with sqlite3.connect(self.db_path) as conn:

@@ -15,11 +15,17 @@ class ImageTableModel(QAbstractTableModel):
     def add_image(self, file_path):
         print('[model] add imaged triggered')
         image_metadata = get_image_metadata(file_path)
+
         self.db_handler.add_image(image_metadata)
         self.load_images()
     
     def add_tag(self, image_id, tag):
+        # TODO: setup repo and watch. then change path to id
+        # current args (path, tag)
+
+        
         self.db_handler.add_tag(image_id, tag)
+        print('tag added')
 
 
     def rowCount(self, parent=QModelIndex()):

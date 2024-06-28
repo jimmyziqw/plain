@@ -1,7 +1,11 @@
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QLabel, QLineEdit, QPushButton
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QLineEdit, QPushButton
 from gui.meta_container.flow_layout import FlowLayout
+from PyQt6.QtCore import pyqtSignal
 
-class Tags(QFrame):
+
+class TagContainer(QFrame):
+    add_tag_signal = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
         self.tags = []
@@ -27,7 +31,16 @@ class Tags(QFrame):
             self.tags.append(new_tag)
             self.add_tag_button_widget(new_tag)
             self.add_tag_input.clear()
+            self.add_tag_signal.emit(new_tag)
+    
+    def read_tags(self, tags):
+        self.remove_all_tags()
 
+        for tag in tags:
+            if tag not in self.tags:
+                self.tags.append(tag)
+                self.add_tag_button_widget(tag)
+               
     def add_tag_button_widget(self, tag):
         tag_button = QPushButton(tag)
         tag_button.setStyleSheet("margin: 2px; padding: 5px;")
@@ -38,3 +51,11 @@ class Tags(QFrame):
         self.tags.remove(tag)
         self.flow_layout.removeWidget(button)
         button.deleteLater()
+
+    def remove_all_tags(self):
+        for i in reversed(range(self.flow_layout.count())):
+            item = self.flow_layout.itemAt(i)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+        self.tags.clear()
